@@ -1,28 +1,32 @@
 import type { Letter } from './types'
 
-const STORAGE_KEY = 'time-locked-letters'
+const KEY = 'time-locked-letters'
 
-export function getLetters(): Letter[] {
+function readAll(): Letter[] {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    return stored ? JSON.parse(stored) : []
+    const raw = localStorage.getItem(KEY)
+    return raw ? (JSON.parse(raw) as Letter[]) : []
   } catch {
     return []
   }
 }
 
-export function addLetter(letter: Letter): void {
-  const letters = getLetters()
-  letters.push(letter)
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(letters))
+function writeAll(letters: Letter[]): boolean {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(letters))
+    return true
+  } catch (e) {
+    console.error('localStorage write failed:', e)
+    return false
+  }
 }
 
-export function deleteLetter(id: string): void {
-  const letters = getLetters().filter(l => l.id !== id)
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(letters))
+export const getLetters = readAll
+
+export function addLetter(letter: Letter): boolean {
+  return writeAll([...readAll(), letter])
 }
 
-export function updateLetter(id: string, updates: Partial<Letter>): void {
-  const letters = getLetters().map(l => l.id === id ? { ...l, ...updates } : l)
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(letters))
+export function deleteLetter(id: string): boolean {
+  return writeAll(readAll().filter(l => l.id !== id))
 }
